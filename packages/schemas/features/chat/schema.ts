@@ -16,7 +16,6 @@ import {
 import { logSchema } from '../result'
 import { settingsSchema, themeSchema } from '../typebot'
 import {
-  textBubbleContentSchema,
   imageBubbleContentSchema,
   videoBubbleContentSchema,
   audioBubbleContentSchema,
@@ -28,19 +27,52 @@ import { preprocessTypebot } from '../typebot/helpers/preprocessTypebot'
 import { typebotV5Schema, typebotV6Schema } from '../typebot/typebot'
 import { BubbleBlockType } from '../blocks/bubbles/constants'
 import { clientSideActionSchema } from './clientSideAction'
+import { ChatSession as ChatSessionFromPrisma } from '@typebot.io/prisma'
+
+export const messageSchema = z.preprocess(
+  (val) => (typeof val === 'string' ? { type: 'text', text: val } : val),
+  z.discriminatedUnion('type', [
+    z.object({
+      type: z.literal('text'),
+      text: z.string(),
+      attachedFileUrls: z
+        .array(z.string())
+        .optional()
+        .describe(
+          'Can only be provided if current input block is a text input block that allows attachments'
+        ),
+    }),
+  ])
+)
+export type Message = z.infer<typeof messageSchema>
 
 const chatSessionSchema = z.object({
   id: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
   state: sessionStateSchema,
-})
+  isReplying: z
+    .boolean()
+    .nullable()
+    .describe(
+      'Used in WhatsApp runtime to avoid concurrent replies from the bot'
+    ),
+}) satisfies z.ZodType<ChatSessionFromPrisma, z.ZodTypeDef, unknown>
 export type ChatSession = z.infer<typeof chatSessionSchema>
 
 const textMessageSchema = z
   .object({
     type: z.literal(BubbleBlockType.TEXT),
-    content: textBubbleContentSchema,
+    content: z.discriminatedUnion('type', [
+      z.object({
+        type: z.literal('richText'),
+        richText: z.any(),
+      }),
+      z.object({
+        type: z.literal('markdown'),
+        markdown: z.string(),
+      }),
+    ]),
   })
   .openapi({
     title: 'Text',
@@ -92,6 +124,7 @@ const embedMessageSchema = z
   })
 
 const displayEmbedBubbleSchema = z.object({
+  url: z.string().optional(),
   waitForEventFunction: z
     .object({
       args: z.record(z.string(), z.unknown()),
@@ -167,8 +200,7 @@ export const startChatInputSchema = z.object({
     .describe(
       "[Where to find my bot's public ID?](../how-to#how-to-find-my-publicid)"
     ),
-  message: z
-    .string()
+  message: messageSchema
     .optional()
     .describe(
       "Only provide it if your flow starts with an input block and you'd like to directly provide an answer to it."
@@ -203,6 +235,7 @@ export const startChatInputSchema = z.object({
         Email: 'john@gmail.com',
       },
     }),
+  textBubbleContentFormat: z.enum(['richText', 'markdown']).default('richText'),
 })
 export type StartChatInput = z.infer<typeof startChatInputSchema>
 
@@ -224,20 +257,40 @@ export const startPreviewChatInputSchema = z.object({
     .describe(
       "[Where to find my bot's ID?](../how-to#how-to-find-my-typebotid)"
     ),
-  isStreamEnabled: z.boolean().optional(),
-  message: z.string().optional(),
+  isStreamEnabled: z.boolean().optional().default(false),
+  message: messageSchema.optional(),
   isOnlyRegistering: z
     .boolean()
     .optional()
     .describe(
       'If set to `true`, it will only register the session and not start the bot. This is used for 3rd party chat platforms as it can require a session to be registered before sending the first message.'
-    ),
+    )
+    .default(false),
   typebot: startTypebotSchema
     .optional()
     .describe(
       'If set, it will override the typebot that is used to start the chat.'
     ),
   startFrom: startFromSchema.optional(),
+  prefilledVariables: z
+    .record(z.unknown())
+    .optional()
+    .describe(
+      '[More info about prefilled variables.](../../editor/variables#prefilled-variables)'
+    )
+    .openapi({
+      example: {
+        'First name': 'John',
+        Email: 'john@gmail.com',
+      },
+    }),
+  sessionId: z
+    .string()
+    .optional()
+    .describe(
+      'If provided, will be used as the session ID and will overwrite any existing session with the same ID.'
+    ),
+  textBubbleContentFormat: z.enum(['richText', 'markdown']).default('richText'),
 })
 export type StartPreviewChatInput = z.infer<typeof startPreviewChatInputSchema>
 
@@ -309,6 +362,12 @@ const chatResponseBaseSchema = z.object({
     .optional()
     .describe(
       'If the typebot contains dynamic avatars, dynamicTheme returns the new avatar URLs whenever their variables are updated.'
+    ),
+  progress: z
+    .number()
+    .optional()
+    .describe(
+      'If progress bar is enabled, this field will return a number between 0 and 100 indicating the current progress based on the longest remaining path of the flow.'
     ),
 })
 

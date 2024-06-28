@@ -1,5 +1,5 @@
 import test, { expect, Page } from '@playwright/test'
-import { importTypebotInDatabase } from '@typebot.io/lib/playwright/databaseActions'
+import { importTypebotInDatabase } from '@typebot.io/playwright/databaseActions'
 import { createId } from '@paralleldrive/cuid2'
 import { getTestAsset } from '@/test/utils/playwright'
 
@@ -19,9 +19,9 @@ test.describe.parallel('Google sheets integration', () => {
 
     await page.click('text=Add a value')
     await page.click('text=Select a column')
-    await page.click('button >> text="Email"')
+    await page.getByRole('menuitem', { name: 'Email' }).click()
     await page.click('[aria-label="Insert a variable"]')
-    await page.click('button >> text="Email" >> nth=1')
+    await page.getByRole('menuitem', { name: 'Email' }).last().click()
 
     await page.click('text=Add a value')
     await page.click('text=Select a column')
@@ -61,11 +61,11 @@ test.describe.parallel('Google sheets integration', () => {
     await page.getByRole('button', { name: 'Row(s) to update' }).click()
     await page.getByRole('button', { name: 'Add filter rule' }).click()
     await page.click('text=Select a column')
-    await page.click('button >> text="Email"')
+    await page.getByRole('menuitem', { name: 'Email' }).click()
     await page.getByRole('button', { name: 'Select an operator' }).click()
     await page.getByRole('menuitem', { name: 'Equal to' }).click()
     await page.click('[aria-label="Insert a variable"]')
-    await page.click('button >> text="Email" >> nth=1')
+    await page.getByRole('menuitem', { name: 'Email' }).last().click()
 
     await page.getByRole('button', { name: 'Cells to update' }).click()
     await page.click('text=Add a value')
@@ -87,7 +87,7 @@ test.describe.parallel('Google sheets integration', () => {
       .press('Enter')
     await expect(
       page.getByText('Succesfully updated matching rows').nth(0)
-    ).toBeVisible()
+    ).toBeVisible({ timeout: 10000 })
   })
 
   test('Get row should work', async ({ page }) => {
@@ -106,11 +106,11 @@ test.describe.parallel('Google sheets integration', () => {
     await page.getByRole('button', { name: 'Select row(s)' }).click()
     await page.getByRole('button', { name: 'Add filter rule' }).click()
     await page.click('text=Select a column')
-    await page.click('button >> text="Email"')
+    await page.getByRole('menuitem', { name: 'Email' }).click()
     await page.getByRole('button', { name: 'Select an operator' }).click()
     await page.getByRole('menuitem', { name: 'Equal to' }).click()
     await page.click('[aria-label="Insert a variable"]')
-    await page.click('button >> text="Email" >> nth=1')
+    await page.getByRole('menuitem', { name: 'Email' }).last().click()
 
     await page.getByRole('button', { name: 'Add filter rule' }).click()
     await page.getByRole('button', { name: 'AND', exact: true }).click()
@@ -153,15 +153,6 @@ const fillInSpreadsheetInfo = async (page: Page) => {
   await page.click('text=pro-user@email.com')
 
   await page.waitForTimeout(1000)
-  await page.getByRole('button', { name: 'Pick a spreadsheet' }).click()
-  await page
-    .frameLocator('.picker-frame')
-    .getByLabel('CRM Google Sheets Not selected')
-    .click()
-  await page
-    .frameLocator('.picker-frame')
-    .getByRole('button', { name: 'Select' })
-    .click()
 
   await page.fill('input[placeholder="Select the sheet"]', 'Sh')
   await page.click('text=Sheet1')

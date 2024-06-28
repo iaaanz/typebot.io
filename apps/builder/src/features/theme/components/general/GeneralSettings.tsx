@@ -4,9 +4,13 @@ import {
   Stack,
   Switch,
   useDisclosure,
-  Text,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
 } from '@chakra-ui/react'
-import { Background, Font, Theme } from '@typebot.io/schemas'
+import { Background, Font, ProgressBar, Theme } from '@typebot.io/schemas'
 import React from 'react'
 import { BackgroundSelector } from './BackgroundSelector'
 import { LockTag } from '@/features/billing/components/LockTag'
@@ -16,7 +20,7 @@ import { useWorkspace } from '@/features/workspace/WorkspaceProvider'
 import { ChangePlanModal } from '@/features/billing/components/ChangePlanModal'
 import { useTranslate } from '@tolgee/react'
 import {
-  defaultTheme,
+  defaultFontType,
   fontTypes,
 } from '@typebot.io/schemas/features/typebot/theme/constants'
 import { trpc } from '@/lib/trpc'
@@ -24,6 +28,7 @@ import { env } from '@typebot.io/env'
 import { useTypebot } from '@/features/editor/providers/TypebotProvider'
 import { RadioButtons } from '@/components/inputs/RadioButtons'
 import { FontForm } from './FontForm'
+import { ProgressBarForm } from './ProgressBarForm'
 
 type Props = {
   isBrandingEnabled: boolean
@@ -63,6 +68,9 @@ export const GeneralSettings = ({
   const handleBackgroundChange = (background: Background) =>
     onGeneralThemeChange({ ...generalTheme, background })
 
+  const updateProgressBar = (progressBar: ProgressBar) =>
+    onGeneralThemeChange({ ...generalTheme, progressBar })
+
   const updateBranding = () => {
     if (isBrandingEnabled && isWorkspaceFreePlan) return
     if (
@@ -87,7 +95,7 @@ export const GeneralSettings = ({
   const fontType =
     (typeof generalTheme?.font === 'string'
       ? 'Google'
-      : generalTheme?.font?.type) ?? defaultTheme.general.font.type
+      : generalTheme?.font?.type) ?? defaultFontType
 
   return (
     <Stack spacing={6}>
@@ -111,22 +119,46 @@ export const GeneralSettings = ({
           onChange={updateBranding}
         />
       </Flex>
-      <Stack>
-        <Text>{t('theme.sideMenu.global.font')}</Text>
-        <RadioButtons
-          options={fontTypes}
-          defaultValue={fontType}
-          onSelect={updateFontType}
-        />
-        <FontForm
-          font={generalTheme?.font ?? defaultTheme.general.font}
-          onFontChange={updateFont}
-        />
-      </Stack>
-      <BackgroundSelector
-        background={generalTheme?.background ?? defaultTheme.general.background}
-        onBackgroundChange={handleBackgroundChange}
-      />
+      <Accordion allowToggle>
+        <AccordionItem>
+          <AccordionButton justifyContent="space-between">
+            Progress Bar
+            <AccordionIcon />
+          </AccordionButton>
+          <AccordionPanel>
+            <ProgressBarForm
+              progressBar={generalTheme?.progressBar}
+              onProgressBarChange={updateProgressBar}
+            />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton justifyContent="space-between">
+            {t('theme.sideMenu.global.font')}
+            <AccordionIcon />
+          </AccordionButton>
+          <AccordionPanel as={Stack}>
+            <RadioButtons
+              options={fontTypes}
+              defaultValue={fontType}
+              onSelect={updateFontType}
+            />
+            <FontForm font={generalTheme?.font} onFontChange={updateFont} />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton justifyContent="space-between">
+            {t('theme.sideMenu.global.background')}
+            <AccordionIcon />
+          </AccordionButton>
+          <AccordionPanel>
+            <BackgroundSelector
+              background={generalTheme?.background}
+              onBackgroundChange={handleBackgroundChange}
+            />
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
     </Stack>
   )
 }

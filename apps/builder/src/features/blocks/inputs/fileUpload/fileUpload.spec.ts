@@ -1,8 +1,8 @@
 import test, { expect } from '@playwright/test'
-import { createTypebots } from '@typebot.io/lib/playwright/databaseActions'
-import { parseDefaultGroupWithBlock } from '@typebot.io/lib/playwright/databaseHelpers'
+import { createTypebots } from '@typebot.io/playwright/databaseActions'
+import { parseDefaultGroupWithBlock } from '@typebot.io/playwright/databaseHelpers'
 import { createId } from '@paralleldrive/cuid2'
-import { freeWorkspaceId } from '@typebot.io/lib/playwright/databaseSetup'
+import { freeWorkspaceId } from '@typebot.io/playwright/databaseSetup'
 import { getTestAsset } from '@/test/utils/playwright'
 import { InputBlockType } from '@typebot.io/schemas/features/blocks/inputs/constants'
 
@@ -27,11 +27,14 @@ test('options should work', async ({ page }) => {
   await page
     .locator(`input[type="file"]`)
     .setInputFiles([getTestAsset('avatar.jpg')])
-  await expect(page.locator(`text=File uploaded`)).toBeVisible()
+  await expect(
+    page.getByRole('img', { name: 'Attached image 1' })
+  ).toBeVisible()
   await page.click('text="Collect file"')
   await page.click('text="Required?"')
   await page.click('text="Allow multiple files?"')
   await page.fill('div[contenteditable=true]', '<strong>Upload now!!</strong>')
+  await page.click('text="Labels"')
   await page.fill('[value="Upload"]', 'Go')
   await page.fill('[value="Clear"]', 'Reset')
   await page.fill('[value="Skip"]', 'Pass')
@@ -45,9 +48,11 @@ test('options should work', async ({ page }) => {
       getTestAsset('avatar.jpg'),
       getTestAsset('avatar.jpg'),
     ])
-  await expect(page.locator(`text="3"`)).toBeVisible()
+  await expect(page.getByRole('img', { name: 'avatar.jpg' })).toHaveCount(3)
   await page.locator('text="Go"').click()
-  await expect(page.locator(`text="3 files uploaded"`)).toBeVisible()
+  await expect(
+    page.getByRole('img', { name: 'Attached image 1' })
+  ).toBeVisible()
 })
 
 test.describe('Free workspace', () => {

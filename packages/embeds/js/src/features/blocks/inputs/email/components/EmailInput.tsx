@@ -20,10 +20,12 @@ export const EmailInput = (props: Props) => {
   const handleInput = (inputValue: string) => setInputValue(inputValue)
 
   const checkIfInputIsValid = () =>
-    inputValue() !== '' && inputRef?.reportValidity()
+    inputRef?.value !== '' && inputRef?.reportValidity()
 
   const submit = () => {
-    if (checkIfInputIsValid()) props.onSubmit({ value: inputValue() })
+    if (checkIfInputIsValid())
+      props.onSubmit({ value: inputRef?.value ?? inputValue() })
+    else inputRef?.focus()
   }
 
   const submitWhenEnter = (e: KeyboardEvent) => {
@@ -31,7 +33,7 @@ export const EmailInput = (props: Props) => {
   }
 
   onMount(() => {
-    if (!isMobile() && inputRef) inputRef.focus()
+    if (!isMobile() && inputRef) inputRef.focus({ preventScroll: true })
     window.addEventListener('message', processIncomingEvent)
   })
 
@@ -47,32 +49,24 @@ export const EmailInput = (props: Props) => {
 
   return (
     <div
-      class={'flex items-end justify-between pr-2 typebot-input w-full'}
-      data-testid="input"
-      style={{
-        'max-width': '350px',
-      }}
+      class="typebot-input-form flex w-full gap-2 items-end max-w-[350px]"
       onKeyDown={submitWhenEnter}
     >
-      <ShortTextInput
-        ref={inputRef}
-        value={inputValue()}
-        placeholder={
-          props.block.options?.labels?.placeholder ??
-          defaultEmailInputOptions.labels.placeholder
-        }
-        onInput={handleInput}
-        type="email"
-        autocomplete="email"
-      />
-      <SendButton
-        type="button"
-        isDisabled={inputValue() === ''}
-        class="my-2 ml-2"
-        on:click={submit}
-      >
-        {props.block.options?.labels?.button ??
-          defaultEmailInputOptions.labels.button}
+      <div class={'flex typebot-input w-full'}>
+        <ShortTextInput
+          ref={inputRef}
+          value={inputValue()}
+          placeholder={
+            props.block.options?.labels?.placeholder ??
+            defaultEmailInputOptions.labels.placeholder
+          }
+          onInput={handleInput}
+          type="email"
+          autocomplete="email"
+        />
+      </div>
+      <SendButton type="button" class="h-[56px]" on:click={submit}>
+        {props.block.options?.labels?.button}
       </SendButton>
     </div>
   )

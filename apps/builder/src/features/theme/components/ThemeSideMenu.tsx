@@ -13,7 +13,6 @@ import { ChatTheme, GeneralTheme, ThemeTemplate } from '@typebot.io/schemas'
 import React from 'react'
 import { CustomCssSettings } from './CustomCssSettings'
 import { useTypebot } from '@/features/editor/providers/TypebotProvider'
-import { headerHeight } from '@/features/editor/constants'
 import { ChatThemeSettings } from './chat/ChatThemeSettings'
 import { GeneralSettings } from './general/GeneralSettings'
 import { ThemeTemplates } from './ThemeTemplates'
@@ -36,7 +35,7 @@ export const ThemeSideMenu = () => {
     typebot &&
     updateTypebot({ updates: { theme: { ...typebot.theme, customCss } } })
 
-  const selectedTemplate = (
+  const selectTemplate = (
     selectedTemplate: Partial<Pick<ThemeTemplate, 'id' | 'theme'>>
   ) => {
     if (!typebot) return
@@ -57,11 +56,13 @@ export const ThemeSideMenu = () => {
       },
     })
 
+  const templateId = typebot?.selectedThemeTemplateId ?? undefined
+
   return (
     <Stack
       flex="1"
       maxW="400px"
-      height={`calc(100vh - ${headerHeight}px)`}
+      h="full"
       borderRightWidth={1}
       pt={10}
       spacing={10}
@@ -85,12 +86,10 @@ export const ThemeSideMenu = () => {
             <AccordionPanel pb={12}>
               {typebot && (
                 <ThemeTemplates
-                  selectedTemplateId={
-                    typebot.selectedThemeTemplateId ?? undefined
-                  }
+                  selectedTemplateId={templateId}
                   currentTheme={typebot.theme}
                   workspaceId={typebot.workspaceId}
-                  onTemplateSelect={selectedTemplate}
+                  onTemplateSelect={selectTemplate}
                 />
               )}
             </AccordionPanel>
@@ -107,6 +106,7 @@ export const ThemeSideMenu = () => {
           <AccordionPanel pb={4}>
             {typebot && (
               <GeneralSettings
+                key={templateId}
                 isBrandingEnabled={
                   typebot.settings.general?.isBrandingEnabled ??
                   defaultSettings.general.isBrandingEnabled
@@ -129,9 +129,11 @@ export const ThemeSideMenu = () => {
           <AccordionPanel pb={4}>
             {typebot && (
               <ChatThemeSettings
+                key={templateId}
                 workspaceId={typebot.workspaceId}
                 typebotId={typebot.id}
                 chatTheme={typebot.theme.chat}
+                generalBackground={typebot.theme.general?.background}
                 onChatThemeChange={updateChatTheme}
               />
             )}
@@ -148,6 +150,7 @@ export const ThemeSideMenu = () => {
           <AccordionPanel pb={4}>
             {typebot && (
               <CustomCssSettings
+                key={templateId}
                 customCss={typebot.theme.customCss}
                 onCustomCssChange={updateCustomCss}
               />
